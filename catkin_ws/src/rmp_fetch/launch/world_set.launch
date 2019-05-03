@@ -1,0 +1,22 @@
+<launch>
+    <arg name="robot" default="fetch"/>
+
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find rmp_fetch)/worlds/rmp.world"/>
+        <!-- more default parameters can be changed here -->
+    </include>
+
+    <!-- <include file="$(find fetch_navigation)/launch/fetch_nav.launch">
+        <arg name="map_file"
+        value="/root/catkin_ws/src/fetchit_world/map/playground.yaml"/>
+    </include> -->
+
+    <!-- <node pkg="rviz" type="rviz" name="$(anon rivz)"
+     args="-d $(find fetchit_world)/config/visualize.rviz">
+    </node> -->
+
+    <!-- Oh, you wanted a robot? -->
+  <include file="$(find fetch_gazebo)/launch/include/$(arg robot).launch.xml" />
+</launch>
+
+

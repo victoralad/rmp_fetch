@@ -1,0 +1,8 @@
+prefix=/home/victora/Documents/rmp/catkin_ws/install
+
+Name: rmp_fetch
+Description: Description of rmp_fetch
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/victora/Documents/rmp/catkin_ws/install/lib 
+Requires: 
