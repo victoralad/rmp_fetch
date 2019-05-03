@@ -3,6 +3,7 @@
     <arg name="map_file"
         value="/home/victora/Documents/rmp/catkin_ws/src/rmp_fetch/map/map_world1.yaml"/>
 </include>
+<include file="$(find fetch_moveit_config)/launch/move_group.launch"></include>
 <!-- <node pkg="assignment2" type="keyboard_teleop.py"
     name="Fetch_teleop" output="screen">
 </node> -->

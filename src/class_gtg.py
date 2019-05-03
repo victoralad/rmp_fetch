@@ -4,10 +4,11 @@ import fcl
 import moveit_commander
 import moveit_msgs.msg
 import actionlib
+from actionlib_msgs.msg import GoalStatusArray
 # import move_base_msgs
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-# from moveit_msgs.msg import MoveItErrorCodes
-# from moveit_python import MoveGroupInterface, PlanningSceneInterface
+from moveit_msgs.msg import MoveItErrorCodes
+from moveit_python import MoveGroupInterface, PlanningSceneInterface
 #roslib.load_manifest('my_package')
 from scipy import linalg
 from geometry_msgs.msg import Point, PoseWithCovarianceStamped, PoseStamped, Quaternion, Twist
@@ -39,6 +40,8 @@ class G2g:
         self.init = False
         self.angG = 0
         self.ang = 0
+        self.send_g = True
+        self.status = 0
         self.quaternion = np.zeros((8, 4))
         self.translation = np.zeros((8, 3))
         self.ret = np.zeros(7)
@@ -53,34 +56,36 @@ class G2g:
 
     def goToGoal(self):
         
-        self.callback()
+        self.set_goal()
 
         objectLocation = rospy.Subscriber("/gazebo/model_states", ModelStates, self.current_pose)
+        goal_stat =   rospy.Subscriber("/move_base/status", GoalStatusArray, self.goal_status)
+        self.arm_move()
         # objectLocation = rospy.Subscriber("/odom", Odometry, self.current_pose)
 
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
     
-    def callback(self): 
+    def set_goal(self): 
         ################################################# sets the goal pose  ###############################################
 
-        dxG = 0.400110849627
-        dyG = -0.464287270367
-        dzG = 0.0004
-        dxo = -0.00141823052058
-        dyo = -0.00316135772783
-        dzo = -0.408871135833
-        dwo = 0.912585551454
+        # dxG = 0.400110849627
+        # dyG = -0.464287270367
+        # dzG = 0.0004
+        # dxo = -0.00141823052058
+        # dyo = -0.00316135772783
+        # dzo = -0.408871135833
+        # dwo = 0.912585551454
 
         
-        # self.dxG = -1.95996566627
-        # self.dyG = -4.89012928885
-        # self.dzG = 0.000615345201244
+        dxG = 3.16058202426
+        dyG = 2.49855960764
+        dzG = 0.000615345201244
         
-        # dxo = -3.86143497942e-05
-        # dyo =  -0.00146424462051
-        # dzo = -0.0239430488415
-        # dwo = 0.999712251055
+        dxo = -0.00219576617675
+        dyo =  -0.000729841179802
+        dzo = -0.948937286123
+        dwo = 0.315456293247
       
 
         self.translationG = np.array([dxG, dyG, dzG])
@@ -91,7 +96,8 @@ class G2g:
         # print "desired position:  ", self.dxG, ",  ", self.dyG, "   desired angle:  ", self.angG*180/pi
         time.sleep(1)
 
-        self.init = True
+        self.init = False
+        self.check_collision = False
         self.ang_comp = False 
         self.lin_comp = False
 
@@ -131,7 +137,6 @@ class G2g:
 
         if self.check_collision:
             self.collision_check()
-            #time.sleep(2)
             #self.check_collision = False
 
         if self.init:
@@ -144,58 +149,77 @@ class G2g:
 
     def control(self, position, orientation):
         """Send a cartesian goal to the action server."""
-        # #action_address = '/j2n6s300_driver/pose_action/tool_pose'
-        # client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
-        # #print "hey"
-        # client.wait_for_server()
+        #action_address = '/j2n6s300_driver/pose_action/tool_pose'
+        client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+        #print "hey"
+        client.wait_for_server()
 
-        # goal = MoveBaseGoal()
-        # goal.target_pose.header = Header(frame_id='map')
-        # goal.target_pose.pose.position = Point(
-        #     x=position[0], y=position[1], z=position[2])
-        # goal.target_pose.pose.orientation = Quaternion(
-        #     x=orientation[0], y=orientation[1], z=orientation[2], w=orientation[3])
+        goal = MoveBaseGoal()
+        goal.target_pose.header = Header(frame_id='map')
+        goal.target_pose.pose.position = Point(
+            x=position[0], y=position[1], z=position[2])
+        goal.target_pose.pose.orientation = Quaternion(
+            x=orientation[0], y=orientation[1], z=orientation[2], w=orientation[3])
 
-        # # print('goal.pose in client 1: {}'.format(goal.pose.pose)) # debug
+        # print('goal.pose in client 1: {}'.format(goal.pose.pose)) # debug
+        # client.cancel_all_goals()
 
-        # client.send_goal(goal)
+        if self.send_g:
+            client.send_goal(goal)
+            self.send_g = False
+
+        # if self.status == 1:
+        #     client.send_goal(goal)
+
+        if self.status == 3:
+            print "waypoint reached"
+            
+            # self.status = 0
+            # self.init = False
+
         
+        
+        print self.status
+        
+        
+        
+            
 
         # if client.wait_for_result(rospy.Duration(1.0)):
-        #     return client.get_result()
+        #     client.get_result()
         # else:
         #     client.cancel_all_goals()
-        #     print('        the cartesian action timed-out')
-        #     return None 
+            # print('        the cartesian action timed-out')
+            # return None 
         
-            # publish to whatever message the driving is going to take place
+            #publish to whatever message the driving is going to take place
 
 
             ###############################################################################################
         
-        client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
-        print "hey1"
-        client.wait_for_server()
-        print "hey2"
+        # client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+        # client.wait_for_server()
 
         
-        #person found
-        rospy.loginfo("Found person, generate goal")
-        target_goal_simple = PoseStamped()
-        #target_goal = MoveBaseGoal()
+        # #person found
+        # #rospy.loginfo("Found path, generate goal")
+        # target_goal_simple = PoseStamped()
+        # #target_goal = MoveBaseGoal()
 
-        #forming a proper PoseStamped message
-        target_goal_simple.pose.position = Point(x=position[0], y=position[1], z=position[2])
-        # target_goal_simple.pose.position.z = 0
-        target_goal_simple.pose.orientation = Quaternion(x=orientation[0], y=orientation[1], z=orientation[2], w=orientation[3])
-        target_goal_simple.header.frame_id = 'map'
-        target_goal_simple.header.stamp = rospy.Time.now()
-        #target_goal.target_pose.pose.position = data.people[0].pos
+        # #forming a proper PoseStamped message
+        # target_goal_simple.pose.position = Point(x=position[0], y=position[1], z=position[2])
+        # # target_goal_simple.pose.position.z = 0
+        # target_goal_simple.pose.orientation = Quaternion(x=orientation[0], y=orientation[1], z=orientation[2], w=orientation[3])
+        # target_goal_simple.header.frame_id = 'map'
+        # target_goal_simple.header.stamp = rospy.Time.now()
+        # #target_goal.target_pose.pose.position = data.people[0].pos
 
-        #sending goal
-        rospy.loginfo("sending goal")
-        pub = rospy.Publisher("move_base_simple/goal", PoseStamped, queue_size = 10)
-        pub.publish(target_goal_simple)
+        # #sending goal
+        # #rospy.loginfo("sending goal")
+        # pub = rospy.Publisher("move_base_simple/goal", PoseStamped, queue_size = 10)
+        # pub.publish(target_goal_simple)
+
+        # print "result", client.get_result()
         #client.send_goal(target_goal)
 
         #######################################################################################################
@@ -217,76 +241,61 @@ class G2g:
         # else:
         #     return client.get_result()
 
+    def goal_status(self, data):
+        if(len(data.status_list) > 0):
+            self.status = data.status_list[len(data.status_list)-1].status
 
-    def control2(self, d, ang):
-        dxG = self.translationG[0]
-        dyG = self.translationG[1]
-        angG = self.angG
-    
-        drive = Twist()
+    def arm_move(self):
 
-        x_state = d[0]
-        y_state = d[1]
+        move_group = MoveGroupInterface("arm_with_torso", "base_link")
 
-        #print x_state, y_state
-        
-        y_diff = dyG - y_state
-        x_diff = dxG - x_state
+        # Define ground plane
+        # This creates objects in the planning scene that mimic the ground
+        # If these were not in place gripper could hit the ground
+        planning_scene = PlanningSceneInterface("base_link")
+        planning_scene.removeCollisionObject("my_front_ground")
+        planning_scene.removeCollisionObject("my_back_ground")
+        planning_scene.removeCollisionObject("my_right_ground")
+        planning_scene.removeCollisionObject("my_left_ground")
+        planning_scene.addCube("my_front_ground", 2, 1.1, 0.0, -1.0)
+        planning_scene.addCube("my_back_ground", 2, -1.2, 0.0, -1.0)
+        planning_scene.addCube("my_left_ground", 2, 0.0, 1.2, -1.0)
+        planning_scene.addCube("my_right_ground", 2, 0.0, -1.2, -1.0)
 
-        ratio = y_diff/x_diff
-        ang_goal = atan2(y_diff, x_diff)
+        # TF joint names
+        joint_names = ["torso_lift_joint", "shoulder_pan_joint",
+                    "shoulder_lift_joint", "upperarm_roll_joint",
+                    "elbow_flex_joint", "forearm_roll_joint",
+                    "wrist_flex_joint", "wrist_roll_joint"]
+        # Lists of joint angles in the same order as in joint_names
+        disco_poses = [[1, 2.5, -0.6, 3.0, 1.0, 3.0, 1.0, 3.0]]
 
-        if self.ang_comp == False:
-            ang_err = ang - ang_goal
-            print "Bearing error  =  ", abs(ang_err * 180/pi), " degrees" 
-            u_ang = -0.5*ang_err
-            drive.angular.z = u_ang
-            drive.linear.x = 0
-            
-            if abs(ang_err) < 0.01:
-                print "############  Bearing angle reached at:  ", ang * 180/pi," degrees  #############"
-                drive.angular.z = 0
-                self.ang_comp = True
-                time.sleep(4)
+        for pose in disco_poses:
+            if rospy.is_shutdown():
+                break
 
-        if self.ang_comp == True and self.lin_comp == False:
-            r_err = sqrt(x_diff**2 + y_diff**2)
-            print "Distance error  =  ", r_err
-            #print "current state  =  ", x_state, ",  ", y_state
-            u_lin = 0.2*r_err
-            drive.linear.x = u_lin
+            # Plans the joints in joint_names to angles in pose
+            move_group.moveToJointPosition(joint_names, pose, wait=False)
 
-            ang_err = ang - ang_goal
-            u_ang = -0.05*ang_err
-            drive.angular.z = u_ang
-            if r_err < 0.05:
-                drive.linear.x = 0
-                self.lin_comp = True
-                print "------Reached goal position ------------------------------", x_state, ",  ", y_state, ", cur_ang = ",ang*180/pi, " ---------"
-                time.sleep(4)
-                #print "desired position:  ", dxG, ",  ", dyG, "   desired angle:  ", angG*180/pi
-                
-                
-        if self.ang_comp == True and self.lin_comp == True and self.ang_comp2 == False:
-            ang2_err = ang - angG
-            print "Second bearing error  =  ", abs(ang2_err * 180/pi), " degrees" 
-            u2_ang = -0.5*ang2_err
-            drive.angular.z = u2_ang
-            if abs(ang2_err) < 0.005:
-                print "############  Second bearing angle reached at:  ", ang * 180/pi," degrees  #############"
-                drive.angular.z = 0
-                #time.sleep(4)
-                print "------Reached goal at:  ", x_state, ",  ", y_state, ", cur_ang = ",ang*180/pi, " ---------"
-                print "desired position:  ", dxG, ",  ", dyG, "   desired angle:  ", angG*180/pi
-                self.ang_comp2 = True
-                self.check_collision = False
-            
+            # Since we passed in wait=False above we need to wait here
+            move_group.get_move_action().wait_for_result()
+            result = move_group.get_move_action().get_result()
 
-            
+            if result:
+                # Checking the MoveItErrorCode
+                if result.error_code.val == MoveItErrorCodes.SUCCESS:
+                    rospy.loginfo("Disco!")
+                else:
+                    # If you get to this point please search for:
+                    # moveit_msgs/MoveItErrorCodes.msg
+                    rospy.logerr("Arm goal in state: %s",
+                                move_group.get_move_action().get_state())
+            else:
+                rospy.logerr("MoveIt! failure no result returned.")
 
-        pub = rospy.Publisher('/cmd_vel', Twist, queue_size=5)
-        pub.publish(drive)
-
+        # This stops all arm movement goals
+        # It should be called when a program is exiting so movement stops
+        move_group.get_move_action().cancel_all_goals()
 
     def collision_check(self):
 
