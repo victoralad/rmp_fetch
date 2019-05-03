@@ -1,0 +1,12 @@
+<launch>
+	<include file="$(find fetch_navigation)/launch/build_map.launch">
+	</include>
+
+	<node pkg="fetchit_world" type="keyboard_teleop.py" name="Fetch_teleop" output="screen">
+	</node>
+
+	<!-- 
+	<node 
+		pkg="rviz" type="rviz" name="$(anon rviz)" args="-d $(find fetchit_world)/config/fetchit_world.rviz">
+	</node> -->
+</launch>

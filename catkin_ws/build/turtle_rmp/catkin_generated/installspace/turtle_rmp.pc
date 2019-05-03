@@ -1,0 +1,8 @@
+prefix=/home/victora/Documents/rmp/catkin_ws/install
+
+Name: turtle_rmp
+Description: Description of turtle_rmp
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/victora/Documents/rmp/catkin_ws/install/lib 
+Requires: 
