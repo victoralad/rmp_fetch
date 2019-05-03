@@ -1,2 +1,0 @@
-krang_ros:pr2_rmp:rmp_fetch:turtle_rmp
--DCATKIN_DEVEL_PREFIX=/home/victora/Documents/rmp/catkin_ws/devel -DCMAKE_INSTALL_PREFIX=/home/victora/Documents/rmp/catkin_ws/install -G Unix Makefiles

@@ -1,9 +1,0 @@
-<launch>
-<include file="$(find fetch_navigation)/launch/fetch_nav.launch">
-<arg name="map_file"
-value="/root/catkin_ws/src/fetchit_world/map/playground.yaml"/>
-</include>
-<node pkg="rviz" type="rviz" name="$(anon rivz)"
-args="-d $(find fetchit_world)/config/visualize.rviz">
-</node>
-</launch>

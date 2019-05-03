@@ -1,8 +1,0 @@
-prefix=/home/victora/Documents/rmp/catkin_ws/install
-
-Name: krang_ros
-Description: Description of krang_ros
-Version: 0.0.0
-Cflags: 
-Libs: -L/home/victora/Documents/rmp/catkin_ws/install/lib 
-Requires: 
