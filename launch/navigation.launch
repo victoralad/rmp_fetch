@@ -1,9 +1,12 @@
 <launch>
 <include file="$(find fetch_navigation)/launch/fetch_nav.launch">
-<arg name="map_file"
-value="/root/catkin_ws/src/fetchit_world/map/playground.yaml"/>
+    <arg name="map_file"
+        value="/home/victora/Documents/rmp/catkin_ws/src/rmp_fetch/map/map_world1.yaml"/>
 </include>
+<!-- <node pkg="assignment2" type="keyboard_teleop.py"
+    name="Fetch_teleop" output="screen">
+</node> -->
 <node pkg="rviz" type="rviz" name="$(anon rivz)"
-args="-d $(find fetchit_world)/config/visualize.rviz">
+    args="-d $(find rmp_fetch)/config/visualize.rviz">
 </node>
 </launch>

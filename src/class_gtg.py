@@ -91,7 +91,7 @@ class G2g:
         # print "desired position:  ", self.dxG, ",  ", self.dyG, "   desired angle:  ", self.angG*180/pi
         time.sleep(1)
 
-        self.init = False
+        self.init = True
         self.ang_comp = False 
         self.lin_comp = False
 
@@ -135,16 +135,90 @@ class G2g:
             #self.check_collision = False
 
         if self.init:
-            self.control(self.translation[7], self.ang)
-            #self.control(self.translationG, self.quaternionG)
+            # self.control(self.translation[7], self.ang)
+            self.control(self.translationG, self.quaternionG)
         
         #check if the distance starts increasing. If it is, try to re_orient the angle. and drive
         # consider state machines
 
 
-   
+    def control(self, position, orientation):
+        """Send a cartesian goal to the action server."""
+        # #action_address = '/j2n6s300_driver/pose_action/tool_pose'
+        # client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+        # #print "hey"
+        # client.wait_for_server()
 
-    def control(self, d, ang):
+        # goal = MoveBaseGoal()
+        # goal.target_pose.header = Header(frame_id='map')
+        # goal.target_pose.pose.position = Point(
+        #     x=position[0], y=position[1], z=position[2])
+        # goal.target_pose.pose.orientation = Quaternion(
+        #     x=orientation[0], y=orientation[1], z=orientation[2], w=orientation[3])
+
+        # # print('goal.pose in client 1: {}'.format(goal.pose.pose)) # debug
+
+        # client.send_goal(goal)
+        
+
+        # if client.wait_for_result(rospy.Duration(1.0)):
+        #     return client.get_result()
+        # else:
+        #     client.cancel_all_goals()
+        #     print('        the cartesian action timed-out')
+        #     return None 
+        
+            # publish to whatever message the driving is going to take place
+
+
+            ###############################################################################################
+        
+        client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+        print "hey1"
+        client.wait_for_server()
+        print "hey2"
+
+        
+        #person found
+        rospy.loginfo("Found person, generate goal")
+        target_goal_simple = PoseStamped()
+        #target_goal = MoveBaseGoal()
+
+        #forming a proper PoseStamped message
+        target_goal_simple.pose.position = Point(x=position[0], y=position[1], z=position[2])
+        # target_goal_simple.pose.position.z = 0
+        target_goal_simple.pose.orientation = Quaternion(x=orientation[0], y=orientation[1], z=orientation[2], w=orientation[3])
+        target_goal_simple.header.frame_id = 'map'
+        target_goal_simple.header.stamp = rospy.Time.now()
+        #target_goal.target_pose.pose.position = data.people[0].pos
+
+        #sending goal
+        rospy.loginfo("sending goal")
+        pub = rospy.Publisher("move_base_simple/goal", PoseStamped, queue_size = 10)
+        pub.publish(target_goal_simple)
+        #client.send_goal(target_goal)
+
+        #######################################################################################################
+
+        # client = actionlib.SimpleActionClient('move_base',MoveBaseAction)
+        # client.wait_for_server()
+
+        # goal = MoveBaseGoal()
+        # goal.target_pose.header.frame_id = "odom"
+        # goal.target_pose.header.stamp = rospy.Time.now()
+        # goal.target_pose.pose.position.x = 0.5
+        # goal.target_pose.pose.orientation.w = 1.0
+
+        # client.send_goal(goal)
+        # wait = client.wait_for_result()
+        # if not wait:
+        #     rospy.logerr("Action server not available!")
+        #     rospy.signal_shutdown("Action server not available!")
+        # else:
+        #     return client.get_result()
+
+
+    def control2(self, d, ang):
         dxG = self.translationG[0]
         dyG = self.translationG[1]
         angG = self.angG
