@@ -38,29 +38,39 @@ class G2g:
         self.ang_comp2 = False
         self.lin_comp = False
         self.init = False
+        self.init_arm = False
         self.angG = 0
         self.ang = 0
         self.send_g = True
         self.status = 0
+        self.goal_id = 0
+        self.ret = np.zeros(7)
+        self.obj = [fcl.CollisionObject(fcl.Sphere(0.5), fcl.Transform()) for i in range(7)]
         self.quaternion = np.zeros((8, 4))
         self.translation = np.zeros((8, 3))
-        self.ret = np.zeros(7)
-        
-        self.obj = [fcl.CollisionObject(fcl.Sphere(0.5), fcl.Transform()) for i in range(7)]
         for i in range(8):
             self.quaternion[i] = np.array([0, 0, 0, 0])
             self.translation[i] = np.array([0, 0, 0])
-        self.quaternionG = np.array([0, 0, 0, 0])
-        self.translationG = np.array([0, 0, 0])
+
+        self.quaternionG = np.zeros((11, 4))
+        self.translationG = np.zeros((11, 3))
+        for i in range(10):
+            self.quaternionG[i] = np.array([0, 0, 0, 0])
+            self.translationG[i] = np.array([0, 0, 0])
+
+        self.set_goal()
        
 
     def goToGoal(self):
         
-        self.set_goal()
+        
 
         objectLocation = rospy.Subscriber("/gazebo/model_states", ModelStates, self.current_pose)
         goal_stat =   rospy.Subscriber("/move_base/status", GoalStatusArray, self.goal_status)
-        self.arm_move()
+
+        if self.init_arm:
+            print "yeeeees"
+            self.arm_move()
         # objectLocation = rospy.Subscriber("/odom", Odometry, self.current_pose)
 
         # spin() simply keeps python from exiting until this node is stopped
@@ -69,34 +79,37 @@ class G2g:
     def set_goal(self): 
         ################################################# sets the goal pose  ###############################################
 
-        # dxG = 0.400110849627
-        # dyG = -0.464287270367
-        # dzG = 0.0004
-        # dxo = -0.00141823052058
-        # dyo = -0.00316135772783
-        # dzo = -0.408871135833
-        # dwo = 0.912585551454
+        self.translationG = np.array([[0.355589882699,0.589154540941,0.000622224820887],
+                  [0.56832946711,0.947066935758,0.000594851359371],
+                  [0.715094586016,1.20544012708,0.000625826669336],
+                  [0.84488231465,1.83842956679,0.000971872343016],
+                  [0.97226731895,2.66532126274,0.000615122701821],
+                  [1.33084944314,3.23785035243,0.000596003451584],
+                  [2.0315973193,3.42024991393,0.00121327496004],
+                  [2.52618618364,3.36677853412,0.000982675150928],
+                  [3.3875974579,3.23216783153,0.000597231394861],
+                  [3.42189393707,2.58356417629,0.00135884145739],
+                  [3.26652914581,2.50571121007,0.000617821204471]])
 
-        
-        dxG = 3.16058202426
-        dyG = 2.49855960764
-        dzG = 0.000615345201244
-        
-        dxo = -0.00219576617675
-        dyo =  -0.000729841179802
-        dzo = -0.948937286123
-        dwo = 0.315456293247
-      
+        self.quaternionG = np.array([[0.00072271924718,-0.00129541031447,0.48852369384,0.872549368315],
+                         [0.000700451319995,-0.00122983842053,0.497195328881,0.867637482941],
+                         [0.000773128476447,-0.00127069620626,0.522683825411,0.852525311212],
+                         [0.00150306657933,-0.00176022965198,0.649399971822,0.760443501505],
+                         [0.00095453887819,-0.0011095503247,0.655891723286,0.754853565321],
+                         [0.000683273592937,-0.00124227622298,0.478829537464,0.877906751278],
+                         [-0.000627632822033,-0.00245223923504,0.108071515507,0.99413989968],
+                         [-0.000132013652622,-0.00233663283052,-0.0563411119491,0.998408835009],
+                         [-0.000960463026412,-0.00103996059978,-0.678740452197,0.734376875006],
+                         [-0.00165905544165,-0.0023272285041,-0.804703350863,0.593670235613],
+                         [-0.00146055847794,-0.000112261503438,-0.997539249583,0.070094933531]])
 
-        self.translationG = np.array([dxG, dyG, dzG])
-        self.quaternionG = np.array([dxo, dyo, dzo, dwo])
-        eulerG = tf.transformations.euler_from_quaternion(self.quaternionG)
-        self.angG = eulerG[2]
-        
+        # eulerG = tf.transformations.euler_from_quaternion(self.quaternionG)
+        # self.angG = eulerG[2]
+
         # print "desired position:  ", self.dxG, ",  ", self.dyG, "   desired angle:  ", self.angG*180/pi
-        time.sleep(1)
+        
 
-        self.init = False
+        self.init = True
         self.check_collision = False
         self.ang_comp = False 
         self.lin_comp = False
@@ -147,7 +160,12 @@ class G2g:
         # consider state machines
 
 
-    def control(self, position, orientation):
+    def control(self, tG, qG):
+
+        print "goal_id", self.goal_id
+        position = tG[self.goal_id]
+        orientation = qG[self.goal_id]
+
         """Send a cartesian goal to the action server."""
         #action_address = '/j2n6s300_driver/pose_action/tool_pose'
         client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
@@ -164,15 +182,25 @@ class G2g:
         # print('goal.pose in client 1: {}'.format(goal.pose.pose)) # debug
         # client.cancel_all_goals()
 
-        if self.send_g:
-            client.send_goal(goal)
-            self.send_g = False
-
-        # if self.status == 1:
+        # if self.send_g:
         #     client.send_goal(goal)
+        #     self.send_g = False
 
-        if self.status == 3:
-            print "waypoint reached"
+        # if self.status == 3:
+        #     print "waypoint reached"
+        #     self.goal_id = self.goal_id + 1
+        #     self.send_g = True
+
+        client.send_goal(goal)
+        self.goal_id = self.goal_id + 1
+        time.sleep(7)
+        
+        
+        if self.goal_id == 11:
+            print "move arm now"
+            self.init = False
+            self.init_arm = True
+            self.arm_move()
             
             # self.status = 0
             # self.init = False
@@ -184,62 +212,6 @@ class G2g:
         
         
             
-
-        # if client.wait_for_result(rospy.Duration(1.0)):
-        #     client.get_result()
-        # else:
-        #     client.cancel_all_goals()
-            # print('        the cartesian action timed-out')
-            # return None 
-        
-            #publish to whatever message the driving is going to take place
-
-
-            ###############################################################################################
-        
-        # client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
-        # client.wait_for_server()
-
-        
-        # #person found
-        # #rospy.loginfo("Found path, generate goal")
-        # target_goal_simple = PoseStamped()
-        # #target_goal = MoveBaseGoal()
-
-        # #forming a proper PoseStamped message
-        # target_goal_simple.pose.position = Point(x=position[0], y=position[1], z=position[2])
-        # # target_goal_simple.pose.position.z = 0
-        # target_goal_simple.pose.orientation = Quaternion(x=orientation[0], y=orientation[1], z=orientation[2], w=orientation[3])
-        # target_goal_simple.header.frame_id = 'map'
-        # target_goal_simple.header.stamp = rospy.Time.now()
-        # #target_goal.target_pose.pose.position = data.people[0].pos
-
-        # #sending goal
-        # #rospy.loginfo("sending goal")
-        # pub = rospy.Publisher("move_base_simple/goal", PoseStamped, queue_size = 10)
-        # pub.publish(target_goal_simple)
-
-        # print "result", client.get_result()
-        #client.send_goal(target_goal)
-
-        #######################################################################################################
-
-        # client = actionlib.SimpleActionClient('move_base',MoveBaseAction)
-        # client.wait_for_server()
-
-        # goal = MoveBaseGoal()
-        # goal.target_pose.header.frame_id = "odom"
-        # goal.target_pose.header.stamp = rospy.Time.now()
-        # goal.target_pose.pose.position.x = 0.5
-        # goal.target_pose.pose.orientation.w = 1.0
-
-        # client.send_goal(goal)
-        # wait = client.wait_for_result()
-        # if not wait:
-        #     rospy.logerr("Action server not available!")
-        #     rospy.signal_shutdown("Action server not available!")
-        # else:
-        #     return client.get_result()
 
     def goal_status(self, data):
         if(len(data.status_list) > 0):
@@ -259,7 +231,8 @@ class G2g:
         planning_scene.removeCollisionObject("my_left_ground")
         planning_scene.addCube("my_front_ground", 2, 1.1, 0.0, -1.0)
         planning_scene.addCube("my_back_ground", 2, -1.2, 0.0, -1.0)
-        planning_scene.addCube("my_left_ground", 2, 0.0, 1.2, -1.0)
+        #planning_scene.addCube("my_left_ground", 2, 0.0, 1.2, -1.0)
+        planning_scene.addCube("my_left_ground", 1, 1.5, self.translation[2][0], self.translation[2][1], self.translation[2][2])
         planning_scene.addCube("my_right_ground", 2, 0.0, -1.2, -1.0)
 
         # TF joint names
@@ -268,7 +241,7 @@ class G2g:
                     "elbow_flex_joint", "forearm_roll_joint",
                     "wrist_flex_joint", "wrist_roll_joint"]
         # Lists of joint angles in the same order as in joint_names
-        disco_poses = [[1, 2.5, -0.6, 3.0, 1.0, 3.0, 1.0, 3.0]]
+        disco_poses = [[0, 2.5, -0.1, 3.0, 1.5, 3.0, 1.0, 3.0]]
 
         for pose in disco_poses:
             if rospy.is_shutdown():
@@ -349,7 +322,7 @@ class G2g:
                 print "--------------- YES  ", self.ret[i], " --------------------"
             else:
                 print "--------------- NO ", self.ret[i], " -------------------"
-            #time.sleep(2)
+            
 
 
 
@@ -357,10 +330,7 @@ class G2g:
 
 if __name__ == '__main__':
 
-    print "============ Starting tutorial setup"
-    # moveit_commander.roscpp_initialize(sys.argv)
-    # rospy.init_node('move_group_python_interface_tutorial',
-    #                 anonymous=True)
+   
     rospy.init_node('goToGoal', anonymous=True)
     G = G2g()
     G.goToGoal()
