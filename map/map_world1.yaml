@@ -1,4 +1,4 @@
-image: /home/victora/Documents/rmp/catkin_ws/src/rmp_fetch/map/map_world1.pgm
+image: map_world1.pgm
 resolution: 0.050000
 origin: [-5.267037, -5.007874, 0.000000]
 negate: 0

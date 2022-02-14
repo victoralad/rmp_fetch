@@ -4,26 +4,25 @@ import fcl
 import moveit_commander
 import moveit_msgs.msg
 import actionlib
-from actionlib_msgs.msg import GoalStatusArray
-# import move_base_msgs
-from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-from moveit_msgs.msg import MoveItErrorCodes
-from moveit_python import MoveGroupInterface, PlanningSceneInterface
-#roslib.load_manifest('my_package')
-from scipy import linalg
-from geometry_msgs.msg import Point, PoseWithCovarianceStamped, PoseStamped, Quaternion, Twist
-from sensor_msgs.msg import LaserScan
-from nav_msgs.msg import Odometry
-from gazebo_msgs.msg import ModelStates
 import tf
 import time
-from math import pi, cos, sin, atan2, sqrt
 import numpy as np
 import argparse
 import sys
 import rospy
 from std_msgs.msg import String, Header
 from std_msgs.msg import Float32
+from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+from moveit_msgs.msg import MoveItErrorCodes
+from moveit_python import MoveGroupInterface, PlanningSceneInterface
+from scipy import linalg
+from geometry_msgs.msg import Point, PoseWithCovarianceStamped, PoseStamped, Quaternion, Twist
+from sensor_msgs.msg import LaserScan
+from nav_msgs.msg import Odometry
+from gazebo_msgs.msg import ModelStates
+from actionlib_msgs.msg import GoalStatusArray
+from math import pi, cos, sin, atan2, sqrt
+
 
 # if robot not moving, init has been set to False
 

@@ -6,17 +6,17 @@
         <!-- more default parameters can be changed here -->
     </include>
 
-    <!-- <include file="$(find fetch_navigation)/launch/fetch_nav.launch">
-        <arg name="map_file"
-        value="/root/catkin_ws/src/fetchit_world/map/playground.yaml"/>
-    </include> -->
+    <include file="$(find fetch_gazebo)/launch/include/$(arg robot).launch.xml" />
 
-    <!-- <node pkg="rviz" type="rviz" name="$(anon rivz)"
-     args="-d $(find fetchit_world)/config/visualize.rviz">
-    </node> -->
+    <include file="$(find fetch_navigation)/launch/fetch_nav.launch">
+    <arg name="map_file"
+        value="$(find rmp_fetch)/map/map_world1.yaml"/>
+    </include>
+    <include file="$(find fetch_moveit_config)/launch/move_group.launch"></include>
 
-    <!-- Oh, you wanted a robot? -->
-  <include file="$(find fetch_gazebo)/launch/include/$(arg robot).launch.xml" />
+    <node pkg="rviz" type="rviz" name="$(anon rivz)"
+        args="-d $(find rmp_fetch)/config/visualize.rviz">
+    </node>
 </launch>
 
 

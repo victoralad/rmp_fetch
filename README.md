@@ -5,3 +5,9 @@
 ###### roslaunch rmp_fetch world_set.launch
 ###### roslaunch rmp_fetch navigation.launch
 ###### rosrun rmp_fetch class_gtg.py
+
+# Dependencies:
+###### Ubuntu 18
+###### ROS Melodic
+###### Flexible Collision Library
+###### Fetch Robot
