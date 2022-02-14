@@ -28,7 +28,6 @@ from math import pi, cos, sin, atan2, sqrt
 
 class G2g:
 
-
     # init method or constructor  
     def __init__(self): 
         
@@ -58,19 +57,14 @@ class G2g:
             self.translationG[i] = np.array([0, 0, 0])
 
         self.set_goal()
-       
 
     def goToGoal(self):
-        
-        
 
         objectLocation = rospy.Subscriber("/gazebo/model_states", ModelStates, self.current_pose)
         goal_stat =   rospy.Subscriber("/move_base/status", GoalStatusArray, self.goal_status)
 
         if self.init_arm:
-            print "yeeeees"
             self.arm_move()
-        # objectLocation = rospy.Subscriber("/odom", Odometry, self.current_pose)
 
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
@@ -102,12 +96,6 @@ class G2g:
                          [-0.00165905544165,-0.0023272285041,-0.804703350863,0.593670235613],
                          [-0.00146055847794,-0.000112261503438,-0.997539249583,0.070094933531]])
 
-        # eulerG = tf.transformations.euler_from_quaternion(self.quaternionG)
-        # self.angG = eulerG[2]
-
-        # print "desired position:  ", self.dxG, ",  ", self.dyG, "   desired angle:  ", self.angG*180/pi
-        
-
         self.init = True
         self.check_collision = False
         self.ang_comp = False 
@@ -133,31 +121,16 @@ class G2g:
             self.translation[i] = np.array([dx[i], dy[i], dz[i]])
             self.quaternion[i] = np.array([dxo[i], dyo[i], dzo[i], dwo[i]])
 
-        # dx[7] = data.pose.pose.position.x
-        # dy[7] = data.pose.pose.position.y
-        # dz[7] = data.pose.pose.position.z
-        # dxo[7] = data.pose.pose.orientation.x
-        # dyo[7] = data.pose.pose.orientation.y
-        # dzo[7] = data.pose.pose.orientation.z
-        # dwo[7] = data.pose.pose.orientation.w
-        # self.translation[7] = np.array([dx[7], dy[7], dz[7]])
-        # self.quaternion[7] = np.array([dxo[7], dyo[7], dzo[7], dwo[7]])
-
         euler = tf.transformations.euler_from_quaternion(self.quaternion[7])
-        #print self.quaternion[7]
         self.ang = euler[2]
 
         if self.check_collision:
             self.collision_check()
-            #self.check_collision = False
 
         if self.init:
-            # self.control(self.translation[7], self.ang)
             self.control(self.translationG, self.quaternionG)
         
-        #check if the distance starts increasing. If it is, try to re_orient the angle. and drive
-        # consider state machines
-
+        # consider using state machines in the future
 
     def control(self, tG, qG):
 
@@ -173,45 +146,21 @@ class G2g:
 
         goal = MoveBaseGoal()
         goal.target_pose.header = Header(frame_id='map')
-        goal.target_pose.pose.position = Point(
-            x=position[0], y=position[1], z=position[2])
-        goal.target_pose.pose.orientation = Quaternion(
-            x=orientation[0], y=orientation[1], z=orientation[2], w=orientation[3])
-
-        # print('goal.pose in client 1: {}'.format(goal.pose.pose)) # debug
-        # client.cancel_all_goals()
-
-        # if self.send_g:
-        #     client.send_goal(goal)
-        #     self.send_g = False
-
-        # if self.status == 3:
-        #     print "waypoint reached"
-        #     self.goal_id = self.goal_id + 1
-        #     self.send_g = True
+        goal.target_pose.pose.position = Point(x=position[0], y=position[1], z=position[2])
+        goal.target_pose.pose.orientation = Quaternion(x=orientation[0], y=orientation[1], z=orientation[2], w=orientation[3])
 
         client.send_goal(goal)
         self.goal_id = self.goal_id + 1
         time.sleep(7)
-        
         
         if self.goal_id == 11:
             print "move arm now"
             self.init = False
             self.init_arm = True
             self.arm_move()
-            
-            # self.status = 0
-            # self.init = False
-
-        
         
         print self.status
         
-        
-        
-            
-
     def goal_status(self, data):
         if(len(data.status_list) > 0):
             self.status = data.status_list[len(data.status_list)-1].status
@@ -271,8 +220,6 @@ class G2g:
 
     def collision_check(self):
 
-        #world = ['blue_box', 'white_sphere', 'red_cylinder', 'green_box', 'turquoise_box', 'blue_cylinder', 'white_box', 'fetch']
-
         robot = fcl.Cylinder(0.4, 1)
         tR = fcl.Transform(self.quaternion[7], self.translation[7])
         print self.translation[7]
@@ -308,28 +255,18 @@ class G2g:
         tr6 = fcl.Transform(self.quaternion[6], self.translation[6])
         self.obj[6] = fcl.CollisionObject(ob6, tr6)
         
-       
-
         request = fcl.CollisionRequest()
         result = fcl.CollisionResult()
         
         for i in range(7):
             self.ret[i] = fcl.collide(oR, self.obj[i], request, result)
 
-            # ret = fcl.continuousCollide(oR, tR, o_wb, t_wb, request, result)
             if self.ret[i]:
                 print "--------------- YES  ", self.ret[i], " --------------------"
             else:
                 print "--------------- NO ", self.ret[i], " -------------------"
             
-
-
-
-
-
 if __name__ == '__main__':
-
-   
     rospy.init_node('goToGoal', anonymous=True)
     G = G2g()
     G.goToGoal()
