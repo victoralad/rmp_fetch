@@ -27,17 +27,20 @@ from math import pi, cos, sin, atan2, sqrt
 # if robot not moving, init has been set to False
 
 class G2g:
-
-    # init method or constructor  
     def __init__(self): 
+
+        """
+        This class implements simple PD control of a Fetch robot base, from a start pose through multiple goal poses, to a final pose.
+        At the final pose, the end effector of the robot arm is moved to a desired pose with a planning scheme known as Moveit.
+        A collision detection function is implemented with the aid of the Flexible Collision Library (FCL), but not used.
+
+        """
         
         self.check_collision = True
         self.ang_comp = False 
-        self.ang_comp2 = False
         self.lin_comp = False
         self.init = False
         self.init_arm = False
-        self.angG = 0
         self.ang = 0
         self.send_g = True
         self.status = 0
@@ -46,28 +49,9 @@ class G2g:
         self.obj = [fcl.CollisionObject(fcl.Sphere(0.5), fcl.Transform()) for i in range(7)]
         self.quaternion = np.zeros((8, 4))
         self.translation = np.zeros((8, 3))
-        for i in range(8):
-            self.quaternion[i] = np.array([0, 0, 0, 0])
-            self.translation[i] = np.array([0, 0, 0])
-
+        # Initialize 10 goal positions
         self.quaternionG = np.zeros((11, 4))
         self.translationG = np.zeros((11, 3))
-        for i in range(10):
-            self.quaternionG[i] = np.array([0, 0, 0, 0])
-            self.translationG[i] = np.array([0, 0, 0])
-
-        self.set_goal()
-
-    def goToGoal(self):
-
-        objectLocation = rospy.Subscriber("/gazebo/model_states", ModelStates, self.current_pose)
-        goal_stat =   rospy.Subscriber("/move_base/status", GoalStatusArray, self.goal_status)
-
-        if self.init_arm:
-            self.arm_move()
-
-        # spin() simply keeps python from exiting until this node is stopped
-        rospy.spin()
     
     def set_goal(self): 
         ################################################# sets the goal pose  ###############################################
@@ -100,7 +84,6 @@ class G2g:
         self.check_collision = False
         self.ang_comp = False 
         self.lin_comp = False
-
 
     def current_pose(self, data):
 
@@ -268,5 +251,17 @@ class G2g:
             
 if __name__ == '__main__':
     rospy.init_node('goToGoal', anonymous=True)
-    G = G2g()
-    G.goToGoal()
+
+    goToGoal = G2g()
+    goToGoal.set_goal()
+
+    objectLocation = rospy.Subscriber("/gazebo/model_states", ModelStates, goToGoal.current_pose)
+    goal_stat =   rospy.Subscriber("/move_base/status", GoalStatusArray, goToGoal.goal_status)
+
+    # init_arm becomes true when the robot has gone through each of the 10 waypoints (goals).
+    # Once completed, the arm uses Moveit to place the end-effector at a desired pose.
+    if goToGoal.init_arm:
+        goToGoal.arm_move()
+
+    # spin() simply keeps python from exiting until this node is stopped
+    rospy.spin()
